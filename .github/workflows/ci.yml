@@ -26,4 +26,4 @@ jobs:
           coverageLocations: ${{github.workspace}}/coverage.xml:coverage.py
         env:
           CC_TEST_REPORTER_ID: 71f0aeaa5a493d61a1b8f8bb2e94a4b842e7e75fce1cb4e2a7dac4ad2b1aaf6e
-          PYTHONPATH: ${{github.workspace}}
+          PYTHONPATH: ${{github.workspace}}/ch08/pytest

@@ -1,5 +1,5 @@
-# import calc
-# import pytest
+import calc
+import pytest
 
 # def test_add():
 #     assert calc.add(10, 5) == 15

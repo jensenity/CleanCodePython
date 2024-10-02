@@ -26,10 +26,3 @@ jobs:
           ENV: test
           SQLALCHEMY_SILENCE_UBER_WARNING: 1
           PYTHONPATH: ${{github.workspace}}
-
-      - name: Upload Coverage results to share between jobs
-        uses: actions/upload-artifact@v2
-        with:
-          name: coverage
-          path: coverage.xml
-

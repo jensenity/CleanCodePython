@@ -1,0 +1,21 @@
+name: test-dispatch
+run-name: ${{ inputs.project_name }} - Test Dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        required: true
+        default: 'CleanCodePython'
+
+jobs:
+  run-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Print project name
+        run: |
+          echo "Project name: ${{ inputs.project_name }}"

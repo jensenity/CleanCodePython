@@ -1,0 +1,62 @@
+name: inputs_test
+
+on:
+  workflow_dispatch:
+    inputs:
+      lambda_password:
+        required: false
+        type: string
+        default: ''
+        description: 'Optional password for Lambda - will be generated if empty'
+      dbt_cloud_password:
+        required: false
+        type: string
+        default: ''
+        description: 'Optional password for DBT Cloud - will be generated if empty'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate passwords
+        id: generate_passwords
+        run: |
+          # For Lambda password
+          if [ -z "${{ inputs.lambda_password }}" ]; then
+            # Generate a new password
+            LAMBDA_PASSWORD=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32)
+            # Mask it in logs
+            echo "::add-mask::${LAMBDA_PASSWORD}"
+            # Store it in outputs
+            echo "aws_lambda_api_password=${LAMBDA_PASSWORD}" >> $GITHUB_OUTPUT
+          else
+            # Mask the provided password
+            echo "::add-mask::${{ inputs.lambda_password }}"
+            # Store it in outputs
+            echo "aws_lambda_api_password=${{ inputs.lambda_password }}" >> $GITHUB_OUTPUT
+          fi
+
+          # For DBT Cloud password
+          if [ -z "${{ inputs.dbt_cloud_password }}" ]; then
+            # Generate a new password
+            DBT_PASSWORD=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 10)
+            # Mask it in logs
+            echo "::add-mask::${DBT_PASSWORD}"
+            # Store it in outputs
+            echo "dbt_cloud_password=${DBT_PASSWORD}" >> $GITHUB_OUTPUT
+          else
+            # Mask the provided password
+            echo "::add-mask::${{ inputs.dbt_cloud_password }}"
+            # Store it in outputs
+            echo "dbt_cloud_password=${{ inputs.dbt_cloud_password }}" >> $GITHUB_OUTPUT
+          fi
+
+      # Example of how to use the passwords in subsequent steps
+      - name: Use passwords in subsequent steps
+        run: |
+          # Use the passwords (will be masked in logs)
+          echo "Using Lambda password: ${{ steps.generate_passwords.outputs.aws_lambda_api_password }}"
+          echo "Using DBT Cloud password: ${{ steps.generate_passwords.outputs.dbt_cloud_password }}"

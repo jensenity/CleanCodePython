@@ -14,14 +14,15 @@ on:
         default: ''
         description: 'Optional password for DBT Cloud - will be generated if empty'
 
+env:
+    INPUT_LAMBDA_PASSWORD: ${{ inputs.lambda_password }}
+    INPUT_DBT_CLOUD_PASSWORD: ${{ inputs.dbt_cloud_password }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
     # Set all inputs as job-level environment variables
     # This prevents them from appearing in command logs
-    env:
-      INPUT_LAMBDA_PASSWORD: ${{ inputs.lambda_password }}
-      INPUT_DBT_CLOUD_PASSWORD: ${{ inputs.dbt_cloud_password }}
 
     steps:
       - name: Checkout repository

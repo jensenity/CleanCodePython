@@ -21,42 +21,64 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate passwords
-        id: generate_passwords
+      # First, immediately mask any provided passwords
+      - name: Mask provided passwords
         run: |
-          # For Lambda password
-          if [ -z "${{ inputs.lambda_password }}" ]; then
-            # Generate a new password
-            LAMBDA_PASSWORD=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32)
-            # Mask it in logs
-            echo "::add-mask::${LAMBDA_PASSWORD}"
-            # Store it in outputs
-            echo "aws_lambda_api_password=${LAMBDA_PASSWORD}" >> $GITHUB_OUTPUT
-          else
-            # Mask the provided password
+          # Only try to mask if values are provided
+          if [ -n "${{ inputs.lambda_password }}" ]; then
             echo "::add-mask::${{ inputs.lambda_password }}"
-            # Store it in outputs
-            echo "aws_lambda_api_password=${{ inputs.lambda_password }}" >> $GITHUB_OUTPUT
           fi
 
+          if [ -n "${{ inputs.dbt_cloud_password }}" ]; then
+            echo "::add-mask::${{ inputs.dbt_cloud_password }}"
+          fi
+
+      # Handle passwords separately in environment variables
+      - name: Set passwords
+        id: set-passwords
+        env:
+          # Pass inputs as environment variables to avoid showing in command line
+          INPUT_LAMBDA_PW: ${{ inputs.lambda_password }}
+          INPUT_DBT_PW: ${{ inputs.dbt_cloud_password }}
+        run: |
+          # For Lambda password
+          if [ -z "$INPUT_LAMBDA_PW" ]; then
+            # Generate a new password
+            LAMBDA_PASSWORD=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32)
+          else
+            # Use the provided password (already masked)
+            LAMBDA_PASSWORD="$INPUT_LAMBDA_PW"
+          fi
+          # Mask the password
+          echo "::add-mask::${LAMBDA_PASSWORD}"
+          # Store it in outputs (will be masked)
+          echo "aws_lambda_api_password=${LAMBDA_PASSWORD}" >> $GITHUB_OUTPUT
+
           # For DBT Cloud password
-          if [ -z "${{ inputs.dbt_cloud_password }}" ]; then
+          if [ -z "$INPUT_DBT_PW" ]; then
             # Generate a new password
             DBT_PASSWORD=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 10)
-            # Mask it in logs
-            echo "::add-mask::${DBT_PASSWORD}"
-            # Store it in outputs
-            echo "dbt_cloud_password=${DBT_PASSWORD}" >> $GITHUB_OUTPUT
           else
-            # Mask the provided password
-            echo "::add-mask::${{ inputs.dbt_cloud_password }}"
-            # Store it in outputs
-            echo "dbt_cloud_password=${{ inputs.dbt_cloud_password }}" >> $GITHUB_OUTPUT
+            # Use the provided password (already masked)
+            DBT_PASSWORD="$INPUT_DBT_PW"
           fi
+          # Mask the password
+          echo "::add-mask::${DBT_PASSWORD}"
+          # Store it in outputs (will be masked)
+          echo "dbt_cloud_password=${DBT_PASSWORD}" >> $GITHUB_OUTPUT
+
+          # Confirm passwords are set (will show as masked ***)
+          echo "Passwords have been set"
 
       # Example of how to use the passwords in subsequent steps
       - name: Use passwords in subsequent steps
+        env:
+          LAMBDA_PW: ${{ steps.set-passwords.outputs.aws_lambda_api_password }}
+          DBT_PW: ${{ steps.set-passwords.outputs.dbt_cloud_password }}
         run: |
-          # Use the passwords (will be masked in logs)
-          echo "Using Lambda password: ${{ steps.generate_passwords.outputs.aws_lambda_api_password }}"
-          echo "Using DBT Cloud password: ${{ steps.generate_passwords.outputs.dbt_cloud_password }}"
+          # Use the passwords from environment variables (will be masked in logs)
+          echo "Lambda password is set"
+          echo "DBT Cloud password is set"
+
+          # Your actual commands that use the passwords
+          # aws lambda update-function-configuration --function-name my-function --environment "Variables={PASSWORD=$LAMBDA_PW}"

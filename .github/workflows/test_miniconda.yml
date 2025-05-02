@@ -1,3 +1,7 @@
+name: Test Setup Miniconda
+
+on: push
+
 jobs:
   conda-setup:
     name: Test Setup miniconda
@@ -23,5 +27,3 @@ jobs:
           printenv | sort
       - run: |
           conda env update -f test_env.yml -n anaconda-client-env
-      - shell: bash -el {0}
-        run: mamba install jupyterlab
